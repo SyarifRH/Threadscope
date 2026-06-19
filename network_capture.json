@@ -1,0 +1,42 @@
+[
+  {
+    "timestamp": "2026-06-11T17:28:59.083397",
+    "method": "GET",
+    "url": "https://www.threads.net/",
+    "status": 301,
+    "resource_type": "document",
+    "content_type": "text/html; charset=\"utf-8\"",
+    "response_size": 0,
+    "headers": {
+      "upgrade-insecure-requests": "1",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/148.0.7778.96 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"148\", \"HeadlessChrome\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "graphql_data": null,
+    "matched_keywords": [
+      "thread"
+    ]
+  },
+  {
+    "timestamp": "2026-06-11T17:28:59.673758",
+    "method": "GET",
+    "url": "https://www.threads.com/",
+    "status": 200,
+    "resource_type": "document",
+    "content_type": "text/html; charset=\"utf-8\"",
+    "response_size": 0,
+    "headers": {
+      "upgrade-insecure-requests": "1",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/148.0.7778.96 Safari/537.36",
+      "sec-ch-ua": "\"Chromium\";v=\"148\", \"HeadlessChrome\";v=\"148\", \"Not/A)Brand\";v=\"99\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\""
+    },
+    "graphql_data": null,
+    "matched_keywords": [
+      "thread"
+    ]
+  }
+]
