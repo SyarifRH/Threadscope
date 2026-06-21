@@ -54,6 +54,14 @@ cp .env.example .env
 
 ---
 
+## 🛒 Ganti Link Shopee Punya Lu Sendiri
+
+Biar cuannya masuk ke kantong lu (bukan ke kantong *developer*), lu **wajib** ganti data produk di file `shopee_affiliate_links.json`. 
+
+Buka file-nya, terus ganti *link-link* yang ada di situ pake *custom link affiliate* Shopee lu sendiri. Formatnya JSON biasa, lu tinggal sesuaikan nama produk, *keyword*, sama URL-nya. Kalo ngga diganti, ntar yang dapet komisi orang lain dong! 💸
+
+---
+
 ## ⚙️ Konfigurasi `.env`
 
 Buka `.env` dan isi ini:
