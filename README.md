@@ -124,6 +124,87 @@ Kalo semua udah siap, pilih mode yang mau lu jalanin:
 
 ---
 
+## 🏗️ Arsitektur Sistem (Behind the Scenes)
+
+Biar lu tau gimana jeroan bot ini kerja:
+
+```text
+┌──────────────────────────────────────────────────────────────────┐
+│                         Entry Points                             │
+│           main.py  │  auto_commenter.py  │  threads_poster.py   │
+└──────────────────────┬───────────────────────────────────────────┘
+                       │
+         ┌─────────────┼──────────────────────────┐
+         ▼             ▼                          ▼
+   ┌───────────┐  ┌──────────────┐        ┌─────────────────┐
+   │  Session  │  │  LLM Router  │        │  Affiliate      │
+   │  Manager  │  │              │        │  Strategy       │
+   │           │  │ 1. Groq      │        │                 │
+   │ load()    │  │    llama-70b │        │ find_product()  │
+   │ validate()│  │ 2. Gemini    │        │ gen_comment()   │
+   │ inject()  │  │    fallback  │        │ gen_thread()    │
+   └───────────┘  └──────────────┘        └─────────────────┘
+         │
+         ▼
+   ┌───────────────────────────────┐
+   │  services/                    │
+   │  ├── session_manager.py       │  ← Validasi + inject cookies
+   │  ├── network_discovery.py     │  ← Playwright traffic capture
+   │  ├── feed_explorer.py         │  ← HTML endpoint discovery
+   │  ├── affiliate_strategy.py    │  ← Product matching + AI gen
+   │  └── shopee_generator.py      │  ← Link affiliate generator
+   └───────────────────────────────┘
+```
+
+**Kenapa harus "Session-First"?**  
+Awalnya nyoba pake bot login otomatis biasa, eh gagal total kena *trust-layer* Meta yang super protektif. Kalo *legacy login* isinya *retry loop* yang muter-muter bikin pusing, sekarang pake *session-first* (ngambil *cookie* dari browser lu). Jauh lebih stabil, *error*-nya gampang di-*trace*, dan bisa *bypass* sistem *anti-bot* Meta dengan *smooth*.
+
+---
+
+## 📊 Status & Progress Fitur
+
+Secara keseluruhan, sistem *core*-nya udah kelar semua 💯. 
+
+- ✅ **Session Management:** Bypass mode + inject cookie jalan lancar.
+- ✅ **Timeline Fetcher:** Narik feed lewat GraphQL mulus.
+- ✅ **Auto Reply & Auto Post:** 100% fungsional, ada jeda waktu biar keliatan natural.
+- ✅ **AI Engine (Groq + Gemini):** LLM Router jalan, ganti *key* otomatis kalo limit.
+- ✅ **Anti-AI Writing:** Komentar ala netizen + anti bahasa *cringe*.
+- ✅ **Trend Affiliate Mode:** Otomatis nargetin post viral.
+- 🚧 **Multi-Session Support:** Belum dibikin (0%). Nanti rencananya bisa rotasi banyak akun.
+- 🚧 **Web Dashboard:** Masih angan-angan (0%).
+
+---
+
+## 🧠 LLM Stack & Output
+
+| Model | Peran | Alasan |
+|-------|-------|--------|
+| **Groq** (`llama-3.3-70b`) | Primary | Super ngebut dan gratisan boss! |
+| **Google** (`gemini-3.5-flash`) | Fallback | Kalo Groq lagi ngambek atau limit. |
+
+*Bot ini otomatis gonta-ganti API key kalo kena limit.*
+
+**File-file penting hasil output bot:**
+- `stats.json` ➡️ Rekap sukses/error bot lu.
+- `network_capture.json` ➡️ Tangkepan request GraphQL.
+- `gemini_cache.json` ➡️ Cache 24 jam biar ngga buang-buang token.
+
+---
+
+## 📖 Riwayat *Development* (Dari Nol ke Suhu)
+
+- **Fase 0 (Ide Awal):** Pengen nyambungin obrolan di Threads sama *link affiliate* Shopee.
+- **Fase 1-2 (Tragedi Login):** Coba login otomatis via HTTP, eh ketolak mentah-mentah sama Meta. Bikin `LoginRejectionClassifier` eh tetep diblokir.
+- **Fase 3 (Arsitektur Session-First):** Pencerahan dateng! Pake session *cookie* lu dari browser, dan sukses nge-bypass Meta.
+- **Fase 4 (Network Discovery):** Riset *endpoint* GraphQL Threads pake Playwright gara-gara Threads ngga punya public API.
+- **Fase 5 (AI Engine):** Bikin LLM router (Groq -> Gemini) dan *prompt engineering* habis-habisan biar AI-nya nulis kayak *Gen-Z* Indo yang doyan *scrolling*.
+- **Fase 6 (Affiliate Engine):** Nyocokin kata kunci postingan sama *database* produk Shopee tanpa *delay* panjang.
+- **Fase 7 (Trend Mode - Current):** Bot jadi makin pinter, nargetin postingan viral doang biar peluang klik makin gede!
+- **Fase 8 (To-Do):** *Next level*, pengen nambahin rotasi multi-akun, post pake gambar, dan UI *dashboard* cuan.
+
+---
+
 ## ⚠️ Disclaimer PENTING
 
 Bot ini murni buat **riset dan edukasi**. 
