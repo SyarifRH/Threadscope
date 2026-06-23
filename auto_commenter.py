@@ -277,20 +277,46 @@ def human_delay():
     time.sleep(delay)
 
 def load_latest_query_config() -> Dict[str, str]:
-    if not os.path.exists(GRAPHQL_DUMP):
-        raise FileNotFoundError(f"{GRAPHQL_DUMP} not found.")
-    with open(GRAPHQL_DUMP, "r", encoding="utf-8") as f:
-        dumps = json.load(f)
+    # Default fallback dari capture yang sudah ada (hardcoded bypass)
+    DEFAULT_DOC_ID = "37542980015300902"
+    DEFAULT_VARIABLES = '{"data":{"pagination_source":"text_post_feed_threads","reason":"cold_start_fetch"},"variant":"for_you","__relay_internal__pv__BarcelonaIsLoggedInrelayprovider":true,"__relay_internal__pv__BarcelonaHasDearAlgoConsumptionrelayprovider":true,"__relay_internal__pv__BarcelonaHasEventBadgerelayprovider":false,"__relay_internal__pv__BarcelonaGenAIRepliesEnabledrelayprovider":false,"__relay_internal__pv__BarcelonaIsSearchDiscoveryEnabledrelayprovider":false,"__relay_internal__pv__BarcelonaHasCommunitiesrelayprovider":true,"__relay_internal__pv__BarcelonaHasGameScoreSharerelayprovider":false,"__relay_internal__pv__BarcelonaHasPublicViewCountCardrelayprovider":true,"__relay_internal__pv__BarcelonaHasCommunityEntityCardrelayprovider":true,"__relay_internal__pv__BarcelonaHasScorecardCommunityrelayprovider":true,"__relay_internal__pv__BarcelonaHasSportTeamAllegianceCardrelayprovider":false,"__relay_internal__pv__BarcelonaHasMusicrelayprovider":true,"__relay_internal__pv__BarcelonaHasNewspaperLinkStylerelayprovider":false,"__relay_internal__pv__BarcelonaMessagingHasGroupChatsrelayprovider":false,"__relay_internal__pv__BarcelonaHasMessagingrelayprovider":false,"__relay_internal__pv__BarcelonaHasViewerRepliedrelayprovider":false,"__relay_internal__pv__BarcelonaHasGhostPostEmojiActivationrelayprovider":false,"__relay_internal__pv__BarcelonaOptionalCookiesEnabledrelayprovider":true,"__relay_internal__pv__BarcelonaHasDearAlgoWebProductionrelayprovider":false,"__relay_internal__pv__BarcelonaHasWebFaviconsrelayprovider":false,"__relay_internal__pv__BarcelonaIsCrawlerrelayprovider":false,"__relay_internal__pv__BarcelonaHasCommunityTopContributorsrelayprovider":false,"__relay_internal__pv__BarcelonaCanSeeSponsoredContentrelayprovider":false,"__relay_internal__pv__BarcelonaShouldShowFediverseM075Featuresrelayprovider":true,"__relay_internal__pv__BarcelonaIsInternalUserrelayprovider":false}'
+    
+    dumps = []
+    if os.path.exists(GRAPHQL_DUMP):
+        with open(GRAPHQL_DUMP, "r", encoding="utf-8") as f:
+            try:
+                dumps = json.load(f)
+            except json.JSONDecodeError:
+                dumps = []
+                
+        if not isinstance(dumps, list):
+            dumps = [dumps] if dumps else []
+
     for entry in dumps:
+        if not isinstance(entry, dict):
+            continue
+            
         payload    = entry.get("request_payload") or {}
         doc_id     = entry.get("doc_id") or payload.get("doc_id", "")
         friendly   = entry.get("friendly_name") or payload.get("fb_api_req_friendly_name", "")
         variables  = payload.get("variables", "")
-        if friendly in _TARGET_NAMES and doc_id:
-            return {"doc_id": doc_id, "variables": variables}
-        if "pagination_source" in variables and "text_post_feed_threads" in variables and doc_id:
-            return {"doc_id": doc_id, "variables": variables}
-    raise ValueError("No timeline config found.")
+        
+        # Ekstrak dari list jika hasil parsing berupa list (ex: dari parse_qs)
+        if isinstance(doc_id, list): doc_id = doc_id[0] if doc_id else ""
+        if isinstance(friendly, list): friendly = friendly[0] if friendly else ""
+        if isinstance(variables, list): variables = variables[0] if variables else ""
+        
+        # Pastikan variables menjadi string untuk payload GraphQL
+        variables_str = variables if isinstance(variables, str) else json.dumps(variables)
+        
+        if friendly and friendly in _TARGET_NAMES and doc_id:
+            return {"doc_id": str(doc_id), "variables": variables_str}
+        if "pagination_source" in variables_str and "text_post_feed_threads" in variables_str and doc_id:
+            return {"doc_id": str(doc_id), "variables": variables_str}
+            
+    # Jika tidak ketemu atau file tidak ada, gunakan default fallback yang sudah di-capture
+    print("\n[INFO] Menggunakan fallback GraphQL config bawaan (Default).")
+    return {"doc_id": DEFAULT_DOC_ID, "variables": DEFAULT_VARIABLES}
 
 def get_fresh_tokens(session) -> Dict[str, str]:
     tokens: Dict[str, str] = {"lsd": "", "fb_dtsg": ""}
@@ -324,15 +350,22 @@ def fetch_timeline(session, tokens: Dict[str, str], query_config: Dict[str, str]
 
     try:
         resp = session.post(GRAPHQL_URL, data=payload, headers=headers, timeout=30)
-        return json.loads(resp.text) if resp.status_code == 200 else None
-    except Exception:
+        print(f"[DEBUG] fetch_timeline status code: {resp.status_code}")
+        if resp.status_code != 200:
+            print(f"[DEBUG] fetch_timeline error response: {resp.text[:500]}")
+            return None
+        return json.loads(resp.text)
+    except Exception as e:
+        print(f"[DEBUG] fetch_timeline exception: {e}")
         return None
 
 def extract_posts(json_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     posts: List[Dict[str, Any]] = []
     data = json_data.get("data") or {}
     feed_data = data.get("feedData") or (data.get("viewer") or {}).get("home_feed_units")
-    if not feed_data: return posts
+    if not feed_data:
+        print(f"[DEBUG] extract_posts: feedData atau home_feed_units tidak ditemukan. Keys di data: {list(data.keys()) if data else 'data is None'}")
+        return posts
 
     edges = feed_data.get("edges", []) if isinstance(feed_data, dict) else []
     for edge in edges:
@@ -390,13 +423,17 @@ def calculate_trend_score(likes: int, replies: int) -> int:
 def process_timeline(session):
     query_config = load_latest_query_config()
     tokens = get_fresh_tokens(session)
+    print(f"[DEBUG] process_timeline: tokens fetched -> lsd={bool(tokens.get('lsd'))}, fb_dtsg={bool(tokens.get('fb_dtsg'))}")
+    
     raw = fetch_timeline(session, tokens, query_config)
     
     if not raw:
+        print("[DEBUG] process_timeline: raw data dari fetch_timeline bernilai None atau kosong!")
         return False
         
     posts = extract_posts(raw)
     if not posts:
+        print("[DEBUG] process_timeline: Tidak ada postingan yang berhasil diekstrak!")
         return False
 
     app_mode = os.getenv("APP_MODE", "normal").lower()
