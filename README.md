@@ -51,7 +51,7 @@ Bot ini menggunakan pendekatan **Session-First** (menggunakan cookie browser) un
 Buka file `.env` dan lengkapi data berikut:
 
 ```env
-# Session Cookies Threads (Ambil dari F12 > Application > Cookies di instagram.com/threads.net)
+# Session Cookies Threads (Ambil dari F12 > Application > Cookies di threads.net)
 THREADS_SESSION_ID=
 THREADS_CSRF_TOKEN=
 THREADS_DS_USER_ID=
