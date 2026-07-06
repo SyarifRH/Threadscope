@@ -1,0 +1,14 @@
+{
+  "system_start_time": "",
+  "comments_sent": 0,
+  "comment_failures": 0,
+  "posts_created": 4,
+  "post_failures": 0,
+  "gemini_errors": 0,
+  "watchdog_restarts": 0,
+  "last_comment_time": "",
+  "last_post_time": "2026-06-28 22:06:17",
+  "last_error": "",
+  "last_error_time": "",
+  "last_heartbeat": 0.0
+}

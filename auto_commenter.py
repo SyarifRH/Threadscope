@@ -272,8 +272,8 @@ def post_reply(session, post_id: str, text: str) -> bool:
         return False
 
 def human_delay():
-    delay = random.randint(840, 1020) # 14-17 Menit
-    print(f"\n[INFO] Bot beristirahat {int(delay/60)} menit agar natural...")
+    delay = random.randint(1800, 2700)  # 30–45 menit (1800–2700 detik)
+    print(f"\n[INFO] Bot beristirahat {delay // 60} menit agar natural...")
     time.sleep(delay)
 
 def load_latest_query_config() -> Dict[str, str]:
